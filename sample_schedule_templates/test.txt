@@ -1,0 +1,3 @@
+Timeslots / Teacher1 / Teacher2
+8:00am    / Course 1 / Course 2
+9:00am    / -        / Course 3
