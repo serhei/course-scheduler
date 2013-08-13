@@ -55,6 +55,8 @@ def read_preference_file(path):
     for line in input_file:
         if re.match(r"\s*#", line) is not None: # -- skip comment lines.
             continue
+        if re.match(r"^\s*$", line) is not None: # -- skip empty lines.
+            continue
         course, comment = pat_course.search(line).groups()
         courses.append((course,comment,))
 
