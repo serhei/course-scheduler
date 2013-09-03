@@ -1,2 +1,6 @@
 PRIVATE-*
 todo.txt
+
+*.pyc
+CoinMP*
+PuLP*
