@@ -189,7 +189,9 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
   ## Solve the problem and return the solution:
 
   ## MAKE SURE TO USE GLPK SOLVER ON SCHOOL COMPUTERS TODO NO THAT WON'T WORK:
-  solver = solvers.COIN(maxSeconds=int(opts.time_limit)*60)
+  # solver = solvers.PULP_CBC_CMD(maxSeconds=int(opts.time_limit)*60)
+  # solver = solvers.COIN_CMD(maxSeconds=int(opts.time_limit)*60)
+  solver = solvers.COIN_CMD(options=['sec',str(int(opts.time_limit)*60)])
   # solver = solvers.GLPK(options=['--tmlim', str(opts.time_limit), '--nopresol'])
   prob.solve(solver=solver)
 
