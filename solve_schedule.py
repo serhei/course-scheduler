@@ -223,6 +223,7 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
 if __name__=="__main__":
     usage = "%prog <preferences> <teacher info> <partial schedule>\n%prog -p <preference file> <partial schedule>"
     parser = OptionParser(usage=usage)
+
     # TODOXXX parser.add_option('-b', '--ban-method', dest="ban_method", default="none",
     #                   help="method to use for generating alternatives: "
     #                   "solution, permutations, conflicts, none "
@@ -230,8 +231,10 @@ if __name__=="__main__":
     # parser.add_option('-a', '--attempts', dest="attempt_str", default="1-5",
     #                   help="number of attempts to show, or range such as 3-6 "
     #                   "to show third through sixth best")
-    parser.add_option('-c', '--show-conflicts', action="store_true",
-                      default=False, help="print detailed conflict info")
+
+    # parser.add_option('-c', '--show-conflicts', action="store_true",
+    #                  default=True, help="print detailed conflict info")
+
     parser.add_option('-t', '--solver-time', dest="time_limit", default="4",
                       help="time to spend looking for solution, in minutes")
     parser.add_option('-s', '--by-student', action="store_true", \
@@ -243,6 +246,7 @@ if __name__=="__main__":
                      help="obtain student and teacher preferences for single file")
 
     (opts, args) = parser.parse_args()
+    opts.show_conflicts = True # we ALWAYS want to see the conflicts
 
     # TODOXXX # Determine the number of alternatives to generate:
     # alts = opts.attempt_str.split("-")
