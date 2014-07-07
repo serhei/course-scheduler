@@ -44,6 +44,57 @@ def gencmp_conflict(schedule):
 
 pat_course = re.compile(r"^\s*(\b.*\b)\s*(?:\((.*)\))?\s*$")
 
+pat_line = re.compile(r"^\s*(\b.*\b\s*(?:\(.*\))?)\s*:\s*(.*)$") # -- split name from courses
+pat_item = pat_course # -- obtain comment from courses
+# TODOXXX pat_item doesn't do well on things ending in punctuation
+
+def read_preference_line(line):
+    # strip comment from the end
+    if line.find("#") != -1: line = line[:line.find("#")]
+    
+    name_string, course_string = pat_line.search(line).groups()
+    course_items = course_string.split(",")
+    course_items = [elt.strip() for elt in course_items] # -- trim whitespace
+
+    # XXX: may also want to refer to the comment on the course name
+    name = pat_item.search(name_string).groups()[0].strip()
+
+    courses = []
+    for item in course_items:
+        course, comment = pat_item.search(item).groups()
+        if comment == None: comment = ""
+        courses.append((course.strip(),comment.strip(),))
+
+    return (name, courses,)
+
+def read_combined_file(path):
+    input_file = open(path, "r")
+
+    offering = Preferences() # -- courses offered by teachers
+    preferences = Preferences() # -- courses wanted by students
+
+    # Read teacher offerings:
+    for line in input_file:
+        if line.startswith("---"): break
+
+        line = line.strip()
+        if line == "": continue
+        if line.startswith("#"): continue
+
+        name, courses = read_preference_line(line)
+        offering.add_preferences(name, courses)
+
+    # Read class lists:
+    for line in input_file:
+        line = line.strip()
+        if line == "": continue
+        if line.startswith("#"): continue
+
+        course, students = read_preference_line(line) # NB: thus far, syntax is identical but the meanings differ
+        preferences.add_class(course, students)
+
+    return (offering, preferences,)
+
 def read_preference_file(path):
     input_file = open(path, "r")
     
@@ -53,14 +104,15 @@ def read_preference_file(path):
     # Each following line gives a course choice, with possible comment:
     courses = []
     for line in input_file:
-        if re.match(r"\s*#", line) is not None: # -- skip comment lines.
-            continue
+        # Strip comment from line
+        if line.find("#") != -1: line = line[:line.find("#")]
+
         if re.match(r"^\s*$", line) is not None: # -- skip empty lines.
             continue
         course, comment = pat_course.search(line).groups()
         courses.append((course,comment,))
 
-    return name, courses
+    return (name, courses,)
 
 def split_schedule_line(line):
     items = line.split("/")
@@ -85,18 +137,31 @@ class Preferences:
             if not path.endswith('.txt'): # -- skip DS_Store type junk
                 continue
             name, courses = read_preference_file(path)
+            self.add_preferences(name, courses)
 
-            # Allow incremental addition from many datadirs:
-            if name in self.people:
-                self.people[name].extend(courses)
-            else:
-                self.people[name] = courses
+    def add_preferences(self, name, courses):
+        # Allow incremental addition from many datadirs / lines:
+        if name in self.people:
+            self.people[name].extend(courses)
+        else:
+            self.people[name] = courses
 
-            # Also update the classlists to contain the person's name:
-            for course, _comment in courses:
-                if course not in self.classes:
-                    self.classes[course] = set()
-                self.classes[course].add(name)
+        # Also update the classlists to contain the person's name:
+        for course, _comment in courses:
+            if course not in self.classes:
+                self.classes[course] = set()
+            self.classes[course].add(name)
+
+    def add_class(self, course, students):
+        # Allow incremental addition:
+        if course not in self.classes:
+            self.classes[course] = set()
+        for student, _comment in students:
+            self.classes[course].add(student)
+            # Also update the student preferences, obviously:
+            if student not in self.people:
+                self.people[student] = set()
+            self.people[student].add((course,_comment,))
 
 
 class Schedule:

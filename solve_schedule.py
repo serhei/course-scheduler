@@ -2,7 +2,7 @@
 # Uses PuLP to generate plausible completions for a partial schedule.
 # Provided under the terms of the MIT License, as stated in LICENSE.txt.
 
-from course_selection import Preferences, Schedule, read_preference_file
+from course_selection import Preferences, Schedule, read_preference_file, read_combined_file
 from check_schedule import print_conflict_report, print_student_report
 
 from pulp import *
@@ -80,9 +80,9 @@ def format_schedules(offering, solutions, slotlist, attempt_range, opts):
                 print_conflict_report(preferences, schedule)
 
 def gen_schedules(offering, preferences, schedule, attempt_range, opts):
-  all_teachers = flatten(offering.people.keys())
-  all_students = flatten(preferences.people.keys())
-  all_courses = flatten([[c for c, _c in l] for l in offering.people.values()])
+  all_teachers = set(flatten(offering.people.keys()))
+  all_students = set(flatten(preferences.people.keys()))
+  all_courses = set(flatten([[c for c, _c in l] for l in offering.people.values()]))
   classlists = preferences.classes # -- courses that were actually requested.
   all_slots = schedule.slotlist
 
@@ -146,7 +146,7 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
     for slot in all_slots:
       courses_in_slot = 0
       for course, _comment in offering.people[teacher]:
-        course_no = all_courses.index(course)
+        # course_no = all_courses.index(course)
         courses_in_slot += get_scheduled(slot, course)
       prob += courses_in_slot <= 1, "%s no conf. at %s" % (teacher, slot)
       i = i+1; pbar.update(i) # -- display a progress bar.
@@ -221,15 +221,15 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
   # TODO - add constraints for obtaining multiple solutions and solve again...
 
 if __name__=="__main__":
-    usage = "%prog <preferences> <teacher info> <partial schedule>"
+    usage = "%prog <preferences> <teacher info> <partial schedule>\n%prog -p <preference file> <partial schedule>"
     parser = OptionParser(usage=usage)
-    parser.add_option('-b', '--ban-method', dest="ban_method", default="none",
-                      help="method to use for generating alternatives: "
-                      "solution, permutations, conflicts, none "
-                      "[default: %default] (advanced option)")
-    parser.add_option('-a', '--attempts', dest="attempt_str", default="1-5",
-                      help="number of attempts to show, or range such as 3-6 "
-                      "to show third through sixth best")
+    # TODOXXX parser.add_option('-b', '--ban-method', dest="ban_method", default="none",
+    #                   help="method to use for generating alternatives: "
+    #                   "solution, permutations, conflicts, none "
+    #                   "[default: %default] (advanced option)")
+    # parser.add_option('-a', '--attempts', dest="attempt_str", default="1-5",
+    #                   help="number of attempts to show, or range such as 3-6 "
+    #                   "to show third through sixth best")
     parser.add_option('-c', '--show-conflicts', action="store_true",
                       default=False, help="print detailed conflict info")
     parser.add_option('-t', '--solver-time', dest="time_limit", default="4",
@@ -237,18 +237,35 @@ if __name__=="__main__":
     parser.add_option('-s', '--by-student', action="store_true", \
                       default=False, \
                       help="print conflict report by student, not by course")
+
+    # New 'single file' mode:
+    parser.add_option('-p', '--preferences', dest="preference_file", default="", \
+                     help="obtain student and teacher preferences for single file")
+
     (opts, args) = parser.parse_args()
 
-   # Determine the number of alternatives to generate:
-    alts = opts.attempt_str.split("-")
-    if len(alts) == 1: attempts = (1, int(alts[0]))
-    else: attempts = (int(alts[0]), int(alts[1]))
+    # TODOXXX # Determine the number of alternatives to generate:
+    # alts = opts.attempt_str.split("-")
+    # if len(alts) == 1: attempts = (1, int(alts[0]))
+    # else: attempts = (int(alts[0]), int(alts[1]))
+    attempts = (1,1) # XXX this doesn't actually get used at the moment
 
-    if len(args) != 3:
+    if opts.preference_file != "":
+      if len(args) != 1:
+        parser.error("1 argument required with option '-p': schedule")
+      selection_file = args[0]
+      offering, preferences = read_combined_file(opts.preference_file)
+      schedule = Schedule(selection_file)
+    else:
+      if len(args) != 3:
         parser.error("3 arguments required: students, teachers, and schedule")
+      data_dir, off_dir, selection_file = args[0], args[1], args[2]
+      offering = Preferences(off_dir) # -- courses offered by teachers.
+      preferences, schedule = Preferences(data_dir), Schedule(selection_file)
 
-    data_dir, off_dir, selection_file = args[0], args[1], args[2]
-    offering = Preferences(off_dir) # -- courses offered by teachers.
-    preferences, schedule = Preferences(data_dir), Schedule(selection_file)
+    # In case a sanity check is needed:
+    # print str(offering.people) + " " + str(offering.classes)
+    # print str(preferences.people) + " " + str(preferences.classes)
+
     solutions = gen_schedules(offering, preferences, schedule, attempts, opts)
     format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
