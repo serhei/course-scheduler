@@ -114,6 +114,8 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
       if course1 == course2: continue # -- a course can't conflict with itself.
       overlap_size = len(classlists[course1]&classlists[course2])
       overlap[course1, course2] = overlap_size
+      # sometimes we need to deprioritize a course to gain extra flexibility
+      #if course1 == "Drama" or course2 == "Drama": overlap_size /= 10.0
       if overlap_size > 0: # -- there could be actual conflicts here:
         total_conflicts += (overlap_size/2.0) * get_conflict(course1, course2)
         # ... division by 2.0 is necessary to avoid counting conflicts twice.
