@@ -2,7 +2,8 @@
 # Takes a (possibly partial) schedule and checks it for conflicts.
 # Provided under the terms of the MIT License, as stated in LICENSE.txt.
 
-from course_selection import Preferences, Schedule, gencmp_conflict, cmp_to_key
+from course_selection import Preferences, Schedule, read_combined_file, \
+  gencmp_conflict, cmp_to_key
 from optparse import OptionParser
 
 # Helper functions for formatting the final report in user-readable form:
@@ -146,17 +147,27 @@ def print_student_report(preferences, schedule):
     print "" # -- extra newline at the end.
 
 if __name__=="__main__":
-  usage = "%prog <preferences> <schedule>"
+  usage = "%prog <preferences> <schedule>\n%prog -p <preference file> <schedule>"
   parser = OptionParser(usage=usage)
   parser.add_option('-s', '--by-student', action="store_true", default=False, \
                     help="print conflict report by student, not by course")
+  parser.add_option('-p', '--preferences', dest="preference_file", default="",
+                    help="obtain student preferences from single file")
   (opts, args) = parser.parse_args()
 
-  if len(args) != 2:
-    parser.error("two arguments required: student preferences, and schedule")
+  if opts.preference_file != "":
+    if len(args) != 1:
+      parser.error("one argument required with option '-p': schedule")
+    selection_file = args[0]
+    offering, preferences = read_combined_file(opts.preference_file)
+    schedule = Schedule(selection_file)
+  else:
+    if len(args) != 2:
+      parser.error("two arguments required: student preferences, and schedule")
+    data_dir = args[0]
+    selection_file = args[1]
+    preferences, schedule = Preferences(data_dir), Schedule(selection_file)
 
-  data_dir, selection_file = args[0], args[1]
-  preferences, schedule = Preferences(data_dir), Schedule(selection_file)
   # Check for the --by-student option:
   if opts.by_student:
     print_student_report(preferences, schedule)

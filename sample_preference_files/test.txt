@@ -1,4 +1,4 @@
-Teacher 1 (stuff): Course 1, Course 4 (wonky), Course 5 # This is a comment
+Teacher 1 (stuff): Course 1, Course 4 (wonky) # Course 5 # This is a comment
   # This is another comment
 Teacher 2: Course 2, Course 3
 
@@ -8,6 +8,6 @@ Course 1: Student 1, John Doe # Moar comment
 Course 2: Student 1, John Doe (comments go in brackets)
 Course 3: Student 1, Frederick
 Course 4: Student 1, John Doe, Jane Doe
-Course 5: John Doe
+Course 5: John Doe # not offered
 
 # Nonexistent Course 8: Frederick
