@@ -39,6 +39,7 @@ def format_schedules(offering, solutions, slotlist, attempt_range, opts):
         else:
             cfl_str = "conflicts"
         print "Solution #%d, %d %s:" % (curr_attempt, num_conflicts, cfl_str)
+        print "===" # marker for check_schedule.py
         curr_attempt = curr_attempt + 1
 
         # Print the schedule - determine column widths and format a table:
@@ -71,6 +72,7 @@ def format_schedules(offering, solutions, slotlist, attempt_range, opts):
                 else:
                     line += " / " + row[teacher].ljust(col_widths[i])
             print line
+        print "===" # marker for check_schedule.py
         print "" # -- extra newline.
 
         if opts.show_conflicts:

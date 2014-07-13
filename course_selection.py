@@ -165,13 +165,13 @@ class Preferences:
 
 
 class Schedule:
-    def __init__(self, path=None):
+    def __init__(self, path=None, lenient=False):
         self.slotlist = []
         self.timeslots = {}
         self.bad_slots = {} ## EXPERIMENTAL
         self.courses = {}
         if path is not None:
-            self.read_from_file(path)
+            self.read_from_file(path, lenient)
 
     def add(self, teacher, course, timeslot):
         if timeslot in self.timeslots:
@@ -187,15 +187,22 @@ class Schedule:
         else:
             self.bad_slots[teacher] = [timeslot]
 
-    def read_from_file(self, path):
+    def read_from_file(self, path, lenient=False):
         input_file = open(path, "r")
 
         # Obtain a list of teachers from the first line in the file:
         line = input_file.readline()
+        if lenient and line.find("/") == -1:
+            # for lenient-mode, parse the area between the "==="
+            while not line.startswith("==="):
+                line = input_file.readline()
+            line = input_file.readline() # skip another line
         _dontcare, teachers = split_schedule_line(line)
 
         # Each following line gives the courses scheduled for one timeslot:
         for line in input_file:
+            if lenient and line.startswith("==="):
+                break # finished reading
             timeslot, courses = split_schedule_line(line)
             self.slotlist.append(timeslot) # -- note order of slots.
             for course, teacher in zip(courses, teachers):

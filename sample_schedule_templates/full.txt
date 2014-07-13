@@ -1,0 +1,13 @@
+Solution #1, 4 conflicts:
+===
+Timeslots / Teacher 1 / Teacher 2
+8:00am    / Course 1  / Course 2 
+9:00am    / Course 4  / Course 3 
+===
+
+COURSE CONFLICT: 2 students take Course 1 and Course 2 at 8:00am:
+        Student 1 and John Doe
+COURSE CONFLICT: 1 student takes Course 4 and Course 3 at 9:00am:
+        Student 1
+COURSE CONFLICT: 1 student takes Course 4 and Course 5 at 9:00am:
+        John Doe

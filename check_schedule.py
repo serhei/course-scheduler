@@ -160,13 +160,13 @@ if __name__=="__main__":
       parser.error("one argument required with option '-p': schedule")
     selection_file = args[0]
     offering, preferences = read_combined_file(opts.preference_file)
-    schedule = Schedule(selection_file)
+    schedule = Schedule(selection_file, lenient=True)
   else:
     if len(args) != 2:
       parser.error("two arguments required: student preferences, and schedule")
-    data_dir = args[0]
-    selection_file = args[1]
-    preferences, schedule = Preferences(data_dir), Schedule(selection_file)
+    data_dir, selection_file = args[0], args[1]
+    preferences = Preferences(data_dir)
+    schedule = Schedule(selection_file, lenient=True)
 
   # Check for the --by-student option:
   if opts.by_student:
