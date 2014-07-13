@@ -2,7 +2,7 @@
 # Uses PuLP to generate plausible completions for a partial schedule.
 # Provided under the terms of the MIT License, as stated in LICENSE.txt.
 
-from course_selection import Preferences, Schedule, read_preference_file, read_combined_file
+from course_selection import Preferences, Schedule, read_combined_file
 from check_schedule import print_conflict_report, print_student_report
 
 from pulp import *
