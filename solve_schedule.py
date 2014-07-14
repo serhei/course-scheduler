@@ -28,8 +28,6 @@ def flatten(l):
 # Actual logic relating to schedule generation:
 
 def format_schedules(offering, solutions, slotlist, attempt_range, opts):
-    print "\n" # -- visual separation from the solver output above
-
     start, end = attempt_range
     curr_attempt = start
     for schedule, num_conflicts in solutions:
@@ -249,6 +247,10 @@ if __name__=="__main__":
     parser.add_option('-p', '--preferences', dest="preference_file", default="", \
                      help="obtain student and teacher preferences for single file")
 
+    # New 'output file' option:
+    parser.add_option('-o', '--outfile', dest="output_file", default="", \
+                      help="also write results to this file")
+
     (opts, args) = parser.parse_args()
     opts.show_conflicts = True # we ALWAYS want to see the conflicts
 
@@ -276,4 +278,13 @@ if __name__=="__main__":
     # print str(preferences.people) + " " + str(preferences.classes)
 
     solutions = gen_schedules(offering, preferences, schedule, attempts, opts)
+    print "\n" # -- visual separation from the solver output above
     format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
+
+    # Also save to file, if needed:
+    if opts.output_file != "":
+      outfile = open(opts.output_file, "w")
+      # XXX I really can't vouch for this redirection hack:
+      with outfile as sys.stdout:
+        format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
+      sys.stdout = sys.__stdout__
