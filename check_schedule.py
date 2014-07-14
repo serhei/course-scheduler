@@ -147,6 +147,7 @@ def print_student_report(preferences, schedule):
     print "" # -- extra newline at the end.
 
 if __name__=="__main__":
+  # TODOXXX add -o option?
   usage = "%prog <preferences> <schedule>\n%prog -p <preference file> <schedule>"
   parser = OptionParser(usage=usage)
   parser.add_option('-s', '--by-student', action="store_true", default=False, \
