@@ -5,8 +5,8 @@
 from course_selection import Preferences, Schedule, read_combined_file
 from check_schedule import print_conflict_report, print_student_report
 
-from pulp import *
-from progressbar import ProgressBar
+#from pulp import *
+#from progressbar import ProgressBar
 
 from optparse import OptionParser
 import sys
@@ -26,6 +26,52 @@ def flatten(l):
   return out
 
 # Actual logic relating to schedule generation:
+
+# TODOXXX consolidate columns where teacher only teaches one course
+def format_schedules_html(offering, solutions, slotlist, attempt_range, opts):
+	# XXX need to get rid of the 'multiple attempts' thing outright
+	schedule, num_conflicts = solutions[0]
+	header = "Results of Course Scheduling, %d Conflict%s" \
+	    % (num_conflicts, "" if num_conflicts == 1 else "s")
+
+	print "<html>"
+	print "<head>"
+	print "<title>" + header + "</title>"
+	print "<style>table, th, td { border: 1px solid black; }</style>"
+	print "</head>"
+	print "<body>"
+	print "<h1>" + header + "</h1>"
+	print "<table>"
+
+	teachers = sorted(offering.people.keys())
+
+	# header row
+	print "  <tr>"
+	print "    <td><strong>Timeslots</strong></td>"
+	for teacher in teachers:
+		print "    <td><strong>" + teacher + "</strong></td>"
+	print "  </tr>"
+
+	def timeslot_key(row):
+		slot, _stuff = row
+		return slotlist.index(slot)
+	schedule_rows = schedule.timeslots.items()
+	schedule_rows.sort(key=timeslot_key) # -- show rows in correct order!
+
+	# timeslot rows
+	for slot, row in schedule_rows:
+		print "  <tr>"
+		print "    <td>" + slot +"</td>"
+		for teacher in teachers:
+			if teacher not in row: # -- empty schedule slot:
+				print "    <td>&nbsp;</td>"
+			else:
+				print "    <td>" + row[teacher] + "</td>"
+		print "  </tr>"
+
+	print "</table>"
+	print "</body>"
+	print "</html>"
 
 def format_schedules(offering, solutions, slotlist, attempt_range, opts):
     start, end = attempt_range
@@ -249,7 +295,9 @@ if __name__=="__main__":
 
     # New 'output file' option:
     parser.add_option('-o', '--outfile', dest="output_file", default="", \
-                      help="also write results to this file")
+	                      help="also write results in plaintext to this file")
+    parser.add_option('-h', '--html', dest="html_output_file", default="", \
+	                      help="also write results in HTML format to this file")
 
     (opts, args) = parser.parse_args()
     opts.show_conflicts = True # we ALWAYS want to see the conflicts
@@ -288,3 +336,9 @@ if __name__=="__main__":
       with outfile as sys.stdout:
         format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
       sys.stdout = sys.__stdout__
+    if opts.html_output_file != "":
+	    outfile = open(opts.html_output_file, "w")
+			# XXX redirection hack again
+	    with outfile as sys.stdout:
+		    format_schedules_html(offering, solutions, schedule.slotlist, attempts, opts)
+	    sys.stdout = sys.__stdout__
