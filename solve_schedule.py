@@ -5,8 +5,8 @@
 from course_selection import Preferences, Schedule, read_combined_file
 from check_schedule import print_conflict_report, print_student_report
 
-#from pulp import *
-#from progressbar import ProgressBar
+from pulp import *
+from progressbar import ProgressBar
 
 from optparse import OptionParser
 import sys
@@ -28,9 +28,8 @@ def flatten(l):
 # Actual logic relating to schedule generation:
 
 # TODOXXX consolidate columns where teacher only teaches one course
-def format_schedules_html(offering, solutions, slotlist, attempt_range, opts):
-	# XXX need to get rid of the 'multiple attempts' thing outright
-	schedule, num_conflicts = solutions[0]
+def format_schedules_html(offering, schedule, num_conflicts, opts):
+	slotlist = schedule.slotlist
 	header = "Results of Course Scheduling, %d Conflict%s" \
 	    % (num_conflicts, "" if num_conflicts == 1 else "s")
 
@@ -73,59 +72,57 @@ def format_schedules_html(offering, solutions, slotlist, attempt_range, opts):
 	print "</body>"
 	print "</html>"
 
-def format_schedules(offering, solutions, slotlist, attempt_range, opts):
-    start, end = attempt_range
-    curr_attempt = start
-    for schedule, num_conflicts in solutions:
-        # Print solution header:
-        if num_conflicts == 1:
-            cfl_str = "conflict"
-        else:
-            cfl_str = "conflicts"
-        print "Solution #%d, %d %s:" % (curr_attempt, num_conflicts, cfl_str)
-        print "===" # marker for check_schedule.py
-        curr_attempt = curr_attempt + 1
+def format_schedules(offering, schedule, num_conflicts, slotlist, opts):
+    slotlist = schedule.slotlist
+    
+    # Print solution header:
+    if num_conflicts == 1:
+        cfl_str = "conflict"
+    else:
+        cfl_str = "conflicts"
+    print "Solution, %d %s:" % (num_conflicts, cfl_str)
+    print "===" # marker for check_schedule.py
 
-        # Print the schedule - determine column widths and format a table:
-        teachers = sorted(offering.people.keys())
-        col_widths = [len("Timeslots")] + [len(t) for t in teachers]
-        for slot, row in schedule.timeslots.items():
-            col_widths[0] = max(col_widths[0], len(slot))
-            for teacher, course in row.items():
-                i = teachers.index(teacher) + 1
-                col_widths[i] = max(col_widths[i], len(course))
+    # Print the schedule - determine column widths and format a table:
+    teachers = sorted(offering.people.keys())
+    col_widths = [len("Timeslots")] + [len(t) for t in teachers]
+    for slot, row in schedule.timeslots.items():
+        col_widths[0] = max(col_widths[0], len(slot))
+        for teacher, course in row.items():
+            i = teachers.index(teacher) + 1
+            col_widths[i] = max(col_widths[i], len(course))
 
-        line = "Timeslots".ljust(col_widths[0])
+    line = "Timeslots".ljust(col_widths[0])
+    for teacher in teachers:
+        i = teachers.index(teacher) + 1
+        line += " / " + teacher.ljust(col_widths[i])
+    print line
+
+    def timeslot_key(row):
+        slot, _stuff = row
+        return slotlist.index(slot)
+    schedule_rows = schedule.timeslots.items()
+    schedule_rows.sort(key=timeslot_key) # -- show rows in correct order!
+
+    for slot, row in schedule_rows:
+        line = slot.ljust(col_widths[0])
         for teacher in teachers:
             i = teachers.index(teacher) + 1
-            line += " / " + teacher.ljust(col_widths[i])
-        print line
-
-        def timeslot_key(row):
-            slot, _stuff = row
-            return slotlist.index(slot)
-        schedule_rows = schedule.timeslots.items()
-        schedule_rows.sort(key=timeslot_key) # -- show rows in correct order!
-        
-        for slot, row in schedule_rows:
-            line = slot.ljust(col_widths[0])
-            for teacher in teachers:
-                i = teachers.index(teacher) + 1
-                if teacher not in row: # -- empty schedule slot:
-                    line += " / " + "-".ljust(col_widths[i])
-                else:
-                    line += " / " + row[teacher].ljust(col_widths[i])
-            print line
-        print "===" # marker for check_schedule.py
-        print "" # -- extra newline.
-
-        if opts.show_conflicts:
-            if opts.by_student:
-                print_student_report(preferences, schedule)
+            if teacher not in row: # -- empty schedule slot:
+                line += " / " + "-".ljust(col_widths[i])
             else:
-                print_conflict_report(preferences, schedule)
+                line += " / " + row[teacher].ljust(col_widths[i])
+        print line
+    print "===" # marker for check_schedule.py
+    print "" # -- extra newline.
 
-def gen_schedules(offering, preferences, schedule, attempt_range, opts):
+    if opts.show_conflicts:
+        if opts.by_student:
+            print_student_report(preferences, schedule)
+        else:
+            print_conflict_report(preferences, schedule)
+
+def gen_schedules(offering, preferences, schedule, opts):
   all_teachers = set(flatten(offering.people.keys()))
   all_students = set(flatten(preferences.people.keys()))
   all_courses = set(flatten([[c for c, _c in l] for l in offering.people.values()]))
@@ -264,7 +261,7 @@ def gen_schedules(offering, preferences, schedule, attempt_range, opts):
 
   # Return our (single) solution:
   num_conflicts = value(prob.objective)
-  return [(resulting_schedule, num_conflicts,)]
+  return (resulting_schedule, num_conflicts,)
 
   # TODO - add constraints for obtaining multiple solutions and solve again...
 
@@ -325,16 +322,16 @@ if __name__=="__main__":
     # print str(offering.people) + " " + str(offering.classes)
     # print str(preferences.people) + " " + str(preferences.classes)
 
-    solutions = gen_schedules(offering, preferences, schedule, attempts, opts)
+    schedule, num_conflicts = gen_schedules(offering, preferences, schedule, opts)
     print "\n" # -- visual separation from the solver output above
-    format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
+    format_schedules(offering, schedule, num_conflicts, schedule.slotlist, opts)
 
     # Also save to file, if needed:
     if opts.output_file != "":
       outfile = open(opts.output_file, "w")
       # XXX I really can't vouch for this redirection hack:
       with outfile as sys.stdout:
-        format_schedules(offering, solutions, schedule.slotlist, attempts, opts)
+        format_schedules(offering, schedule, num_conflicts, opts)
       sys.stdout = sys.__stdout__
     if opts.html_output_file != "":
 	    outfile = open(opts.html_output_file, "w")
