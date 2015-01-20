@@ -269,14 +269,6 @@ if __name__=="__main__":
     usage = "%prog <preferences> <teacher info> <partial schedule>\n%prog -p <preference file> <partial schedule>"
     parser = OptionParser(usage=usage)
 
-    # TODOXXX parser.add_option('-b', '--ban-method', dest="ban_method", default="none",
-    #                   help="method to use for generating alternatives: "
-    #                   "solution, permutations, conflicts, none "
-    #                   "[default: %default] (advanced option)")
-    # parser.add_option('-a', '--attempts', dest="attempt_str", default="1-5",
-    #                   help="number of attempts to show, or range such as 3-6 "
-    #                   "to show third through sixth best")
-
     # parser.add_option('-c', '--show-conflicts', action="store_true",
     #                  default=True, help="print detailed conflict info")
 
@@ -293,17 +285,11 @@ if __name__=="__main__":
     # New 'output file' option:
     parser.add_option('-o', '--outfile', dest="output_file", default="", \
 	                      help="also write results in plaintext to this file")
-    parser.add_option('-h', '--html', dest="html_output_file", default="", \
+    parser.add_option('-H', '--html', dest="html_output_file", default="", \
 	                      help="also write results in HTML format to this file")
 
     (opts, args) = parser.parse_args()
     opts.show_conflicts = True # we ALWAYS want to see the conflicts
-
-    # TODOXXX # Determine the number of alternatives to generate:
-    # alts = opts.attempt_str.split("-")
-    # if len(alts) == 1: attempts = (1, int(alts[0]))
-    # else: attempts = (int(alts[0]), int(alts[1]))
-    attempts = (1,1) # XXX this doesn't actually get used at the moment
 
     if opts.preference_file != "":
       if len(args) != 1:
@@ -333,9 +319,13 @@ if __name__=="__main__":
       with outfile as sys.stdout:
         format_schedules(offering, schedule, num_conflicts, opts)
       sys.stdout = sys.__stdout__
+      print ""
+      print "(also wrote raw output to " + opts.output_file + ")"
     if opts.html_output_file != "":
-	    outfile = open(opts.html_output_file, "w")
-			# XXX redirection hack again
-	    with outfile as sys.stdout:
-		    format_schedules_html(offering, solutions, schedule.slotlist, attempts, opts)
-	    sys.stdout = sys.__stdout__
+      outfile = open(opts.html_output_file, "w")
+      # XXX redirection hack again
+      with outfile as sys.stdout:
+        format_schedules_html(offering, schedule, num_conflicts, opts)
+      sys.stdout = sys.__stdout__
+      print ""
+      print "(also wrote HTML output to " + opts.html_output_file + ")"
