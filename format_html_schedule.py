@@ -27,4 +27,4 @@ if __name__=="__main__":
 		schedule = Schedule(selection_file, lenient=True)
 
 	solutions = [(schedule, 0)]
-	format_schedules_html(offering, solutions, schedule.slotlist, 1, opts)
+	format_schedules_html(offering, schedule, -1, opts)
