@@ -27,11 +27,13 @@ def flatten(l):
 
 # Actual logic relating to schedule generation:
 
-# TODOXXX consolidate columns where teacher only teaches one course
-def format_schedules_html(offering, schedule, num_conflicts, opts):
+def format_schedules_html(offering, schedule, num_conflicts, opts, consolidate=True):
 	slotlist = schedule.slotlist
-	header = "Results of Course Scheduling, %d Conflict%s" \
-	    % (num_conflicts, "" if num_conflicts == 1 else "s")
+	if num_conflicts < 0: # The caller might not know this...
+		header = "Results of Course Scheduling"
+	else:
+		header = "Results of Course Scheduling, %d Conflict%s" \
+	        % (num_conflicts, "" if num_conflicts == 1 else "s")
 
 	print "<html>"
 	print "<head>"
@@ -42,13 +44,20 @@ def format_schedules_html(offering, schedule, num_conflicts, opts):
 	print "<h1>" + header + "</h1>"
 	print "<table>"
 
-	teachers = sorted(offering.people.keys())
+	# Consolidate columns where teacher only teaches one course:
+	teachers, misc_courses = [], []
+	if consolidate:
+		teachers = sorted(filter(lambda k: len(offering.people[k]) != 1, offering.people.keys()))
+		misc_courses = sorted(filter(lambda p: len(p[1]) == 1, offering.people.items()))
+	else:
+		teachers = sorted(offering.people.keys())
 
 	# header row
 	print "  <tr>"
 	print "    <td><strong>Timeslots</strong></td>"
 	for teacher in teachers:
 		print "    <td><strong>" + teacher + "</strong></td>"
+	if consolidate: print "    <td><strong>Misc Courses</strong></td>"
 	print "  </tr>"
 
 	def timeslot_key(row):
@@ -61,11 +70,22 @@ def format_schedules_html(offering, schedule, num_conflicts, opts):
 	for slot, row in schedule_rows:
 		print "  <tr>"
 		print "    <td>" + slot +"</td>"
+
+		# per-teacher columns
 		for teacher in teachers:
 			if teacher not in row: # -- empty schedule slot:
 				print "    <td>&nbsp;</td>"
 			else:
 				print "    <td>" + row[teacher] + "</td>"
+
+		# "Misc Courses" column:
+		if consolidate:
+			print "    <td>"
+			for teacher, courses in misc_courses:
+				course = courses[0]
+				if teacher in row:
+					print "<strong>" + teacher + "</strong>: " + row[teacher] + "<br/>"
+			print "    &nbsp;</td>"
 		print "  </tr>"
 
 	print "</table>"
