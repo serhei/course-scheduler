@@ -27,7 +27,7 @@ def flatten(l):
 
 # Actual logic relating to schedule generation:
 
-def format_schedules_html(offering, schedule, num_conflicts, opts, consolidate=True):
+def format_schedules_html(offering, schedule, num_conflicts, preferences, opts, consolidate=True):
 	slotlist = schedule.slotlist
 	if num_conflicts < 0: # The caller might not know this...
 		header = "Results of Course Scheduling"
@@ -58,6 +58,7 @@ def format_schedules_html(offering, schedule, num_conflicts, opts, consolidate=T
 	for teacher in teachers:
 		print "    <td><strong>" + teacher + "</strong></td>"
 	if consolidate: print "    <td><strong>Misc Courses</strong></td>"
+	# TODO Include column for the conflict summary
 	print "  </tr>"
 
 	def timeslot_key(row):
@@ -92,7 +93,7 @@ def format_schedules_html(offering, schedule, num_conflicts, opts, consolidate=T
 	print "</body>"
 	print "</html>"
 
-def format_schedules(offering, schedule, num_conflicts, slotlist, opts):
+def format_schedules(offering, schedule, num_conflicts, slotlist, preferences, opts):
     slotlist = schedule.slotlist
     
     # Print solution header:
@@ -330,14 +331,14 @@ if __name__=="__main__":
 
     schedule, num_conflicts = gen_schedules(offering, preferences, schedule, opts)
     print "\n" # -- visual separation from the solver output above
-    format_schedules(offering, schedule, num_conflicts, schedule.slotlist, opts)
+    format_schedules(offering, schedule, num_conflicts, schedule.slotlist, preferences, opts)
 
     # Also save to file, if needed:
     if opts.output_file != "":
       outfile = open(opts.output_file, "w")
       # XXX I really can't vouch for this redirection hack:
       with outfile as sys.stdout:
-        format_schedules(offering, schedule, num_conflicts, opts)
+        format_schedules(offering, schedule, num_conflicts, schedule.slotlist, preferences, opts)
       sys.stdout = sys.__stdout__
       print ""
       print "(also wrote raw output to " + opts.output_file + ")"
@@ -345,7 +346,7 @@ if __name__=="__main__":
       outfile = open(opts.html_output_file, "w")
       # XXX redirection hack again
       with outfile as sys.stdout:
-        format_schedules_html(offering, schedule, num_conflicts, opts)
+        format_schedules_html(offering, schedule, num_conflicts, preferences, opts)
       sys.stdout = sys.__stdout__
       print ""
       print "(also wrote HTML output to " + opts.html_output_file + ")"
