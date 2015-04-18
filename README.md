@@ -16,7 +16,7 @@ How to run, e.g. on the sample data provided:
     ./solve_schedule.py -H output.html -p sample_preference_files/test.txt sample_schedule_templates/empty_sm.txt -t 5
     ./solve_schedule.py -H output.html sample_students sample_teachers sample_schedule_templates/empty_sm.txt -t 5
 
-Using a longer duration produces a schedule with fewer conflicts.
+This produces a file like [`sample_output/output.html`](sample_output/output.html). Using a longer duration (`-t` option) produces a schedule with fewer conflicts.
 
 Provided under the terms of the MIT License, as stated in the file LICENSE.txt.
 
